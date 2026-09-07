@@ -131,6 +131,17 @@ class Base_Task(gym.Env):
         self.record_cluttered_objects = list()  # record cluttered objects info
 
         self.eval_success = False
+        self.use_default_collision_material = "restitution" in kwags
+        self.object_joint_damping = kwags.get("object_joint_damping")
+        self.object_joint_stiffness = kwags.get("object_joint_stiffness", 0.0)
+        self.center_of_mass_offset = np.array(
+            [
+                kwags.get("center_of_mass_offset_x", 0.0),
+                kwags.get("center_of_mass_offset_y", 0.0),
+                kwags.get("center_of_mass_offset_z", 0.0),
+            ],
+            dtype=float,
+        )
         self.table_z_bias = (np.random.uniform(low=-self.random_table_height, high=0) + table_height_bias)  # TODO
         self.need_plan = kwags.get("need_plan", True)
         self.left_joint_path = kwags.get("left_joint_path", [])
@@ -152,6 +163,7 @@ class Base_Task(gym.Env):
 
         self.robot.set_origin_endpose()
         self.load_actors()
+        self.apply_task_physics_overrides()
 
         if self.cluttered_table:
             self.get_cluttered_table()
@@ -180,6 +192,58 @@ class Base_Task(gym.Env):
         self.info["info"] = {}
 
         self.stage_success_tag = False
+
+    def apply_object_joint_damping(self, actor):
+        if self.object_joint_damping is not None:
+            actor.set_properties(float(self.object_joint_damping), float(self.object_joint_stiffness))
+
+    def apply_task_physics_overrides(self):
+        if self.object_joint_damping is not None:
+            for actor in self._iter_task_articulation_actors():
+                self.apply_object_joint_damping(actor)
+        if np.any(self.center_of_mass_offset):
+            self.apply_center_of_mass_offset(self.center_of_mass_offset)
+
+    def _iter_task_articulation_actors(self):
+        seen = set()
+
+        def visit(value):
+            if isinstance(value, ArticulationActor):
+                actor_id = id(value.actor)
+                if actor_id not in seen:
+                    seen.add(actor_id)
+                    yield value
+            elif isinstance(value, (list, tuple, set)):
+                for item in value:
+                    yield from visit(item)
+            elif isinstance(value, dict):
+                for item in value.values():
+                    yield from visit(item)
+
+        for name, value in self.__dict__.items():
+            if name in {"robot", "scene"}:
+                continue
+            yield from visit(value)
+
+    def apply_center_of_mass_offset(self, offset):
+        seen = set()
+
+        def apply_component(component):
+            component_id = id(component)
+            if component_id in seen:
+                return
+            seen.add(component_id)
+            pose = component.get_cmass_local_pose()
+            component.set_cmass_local_pose(sapien.Pose(np.asarray(pose.p, dtype=float) + offset, pose.q))
+
+        for actor in self.scene.get_all_actors():
+            for component in actor.get_components():
+                if isinstance(component, sapien.physx.PhysxRigidDynamicComponent):
+                    apply_component(component)
+
+        for actor in self._iter_task_articulation_actors():
+            for link in actor.actor.get_links():
+                apply_component(link)
 
     def check_stable(self):
         actors_list, actors_pose_list = [], []

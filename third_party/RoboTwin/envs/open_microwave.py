@@ -23,7 +23,10 @@ class open_microwave(Base_Task):
             fix_root_link=True,
         )
         self.microwave.set_mass(0.01)
-        self.microwave.set_properties(0.0, 0.0)
+        if self.object_joint_damping is None:
+            self.microwave.set_properties(0.0, 0.0)
+        else:
+            self.apply_object_joint_damping(self.microwave)
 
         self.add_prohibit_area(self.microwave)
         self.prohibited_area.append([-0.25, -0.25, 0.25, 0.1])

@@ -23,6 +23,14 @@ def preprocess(scene, pose: sapien.Pose) -> tuple[sapien.Scene, sapien.Pose]:
         return scene.scene, sapien.Pose([pose.p[0], pose.p[1], pose.p[2] + scene.table_z_bias], pose.q)
 
 
+def _default_collision_material(scene):
+    if not getattr(scene, "use_default_collision_material", False):
+        return None
+    if isinstance(scene, sapien.Scene):
+        return scene.default_physical_material
+    return scene.scene.default_physical_material
+
+
 # create box
 def create_entity_box(
     scene,
@@ -207,6 +215,7 @@ def create_sphere(
     name="",
     texture_id=None,
 ) -> sapien.Entity:
+    collision_material = _default_collision_material(scene)
     scene, pose = preprocess(scene, pose)
     entity = sapien.Entity()
     entity.set_name(name)
@@ -334,6 +343,7 @@ def create_table(
         texture_id=None,
 ) -> sapien.Entity:
     """Create a table with specified dimensions."""
+    collision_material = _default_collision_material(scene)
     scene, pose = preprocess(scene, pose)
     builder = scene.create_actor_builder()
 
@@ -381,7 +391,14 @@ def create_table(
             y = j * (width / 2 - leg_spacing / 2)
             table_leg_pose = sapien.Pose([x, y, -height / 2 - 0.002])
             table_leg_half_size = [thickness / 2, thickness / 2, height / 2 - 0.002]
-            builder.add_box_collision(pose=table_leg_pose, half_size=table_leg_half_size)
+            if collision_material is None:
+                builder.add_box_collision(pose=table_leg_pose, half_size=table_leg_half_size)
+            else:
+                builder.add_box_collision(
+                    pose=table_leg_pose,
+                    half_size=table_leg_half_size,
+                    material=collision_material,
+                )
             builder.add_box_visual(pose=table_leg_pose, half_size=table_leg_half_size, material=color)
 
     builder.set_initial_pose(pose)
@@ -400,6 +417,7 @@ def create_obj(
         model_id=None,
         no_collision=False,
 ) -> Actor:
+    collision_material = _default_collision_material(scene)
     scene, pose = preprocess(scene, pose)
 
     modeldir = Path("assets/objects") / modelname
@@ -425,9 +443,23 @@ def create_obj(
 
     if not no_collision:
         if convex == True:
-            builder.add_multiple_convex_collisions_from_file(filename=str(file_name), scale=scale)
+            if collision_material is None:
+                builder.add_multiple_convex_collisions_from_file(filename=str(file_name), scale=scale)
+            else:
+                builder.add_multiple_convex_collisions_from_file(
+                    filename=str(file_name),
+                    scale=scale,
+                    material=collision_material,
+                )
         else:
-            builder.add_nonconvex_collision_from_file(filename=str(file_name), scale=scale)
+            if collision_material is None:
+                builder.add_nonconvex_collision_from_file(filename=str(file_name), scale=scale)
+            else:
+                builder.add_nonconvex_collision_from_file(
+                    filename=str(file_name),
+                    scale=scale,
+                    material=collision_material,
+                )
 
     builder.add_visual_from_file(filename=str(file_name), scale=scale)
     mesh = builder.build(name=modelname)
@@ -446,6 +478,7 @@ def create_glb(
         is_static=False,
         model_id=None,
 ) -> Actor:
+    collision_material = _default_collision_material(scene)
     scene, pose = preprocess(scene, pose)
 
     modeldir = Path("./assets/objects") / modelname
@@ -470,12 +503,26 @@ def create_glb(
         builder.set_physx_body_type("dynamic")
 
     if convex == True:
-        builder.add_multiple_convex_collisions_from_file(filename=str(file_name), scale=scale)
+        if collision_material is None:
+            builder.add_multiple_convex_collisions_from_file(filename=str(file_name), scale=scale)
+        else:
+            builder.add_multiple_convex_collisions_from_file(
+                filename=str(file_name),
+                scale=scale,
+                material=collision_material,
+            )
     else:
-        builder.add_nonconvex_collision_from_file(
-            filename=str(file_name),
-            scale=scale,
-        )
+        if collision_material is None:
+            builder.add_nonconvex_collision_from_file(
+                filename=str(file_name),
+                scale=scale,
+            )
+        else:
+            builder.add_nonconvex_collision_from_file(
+                filename=str(file_name),
+                scale=scale,
+                material=collision_material,
+            )
 
     builder.add_visual_from_file(filename=str(file_name), scale=scale)
     mesh = builder.build(name=modelname)
@@ -507,6 +554,7 @@ def create_actor(
         is_static=False,
         model_id=0,
 ) -> Actor:
+    collision_material = _default_collision_material(scene)
     scene, pose = preprocess(scene, pose)
     modeldir = Path("assets/objects") / modelname
 
@@ -545,12 +593,26 @@ def create_actor(
         builder.set_physx_body_type("dynamic")
 
     if convex == True:
-        builder.add_multiple_convex_collisions_from_file(filename=str(collision_file), scale=scale)
+        if collision_material is None:
+            builder.add_multiple_convex_collisions_from_file(filename=str(collision_file), scale=scale)
+        else:
+            builder.add_multiple_convex_collisions_from_file(
+                filename=str(collision_file),
+                scale=scale,
+                material=collision_material,
+            )
     else:
-        builder.add_nonconvex_collision_from_file(
-            filename=str(collision_file),
-            scale=scale,
-        )
+        if collision_material is None:
+            builder.add_nonconvex_collision_from_file(
+                filename=str(collision_file),
+                scale=scale,
+            )
+        else:
+            builder.add_nonconvex_collision_from_file(
+                filename=str(collision_file),
+                scale=scale,
+                material=collision_material,
+            )
 
     builder.add_visual_from_file(filename=str(visual_file), scale=scale)
     mesh = builder.build(name=modelname)

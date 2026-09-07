@@ -34,6 +34,7 @@ class Robot:
         right_embodiment_args = kwargs["right_embodiment_config"]
         left_robot_file = kwargs["left_robot_file"]
         right_robot_file = kwargs["right_robot_file"]
+        joint_damping_scale = float(kwargs.get("robot_joint_damping_scale", 1.0))
 
         self.need_topp = need_topp
 
@@ -43,7 +44,7 @@ class Robot:
         if self.left_srdf_path is not None:
             self.left_srdf_path = os.path.join(left_robot_file, self.left_srdf_path)
         self.left_joint_stiffness = left_embodiment_args.get("joint_stiffness", 1000)
-        self.left_joint_damping = left_embodiment_args.get("joint_damping", 200)
+        self.left_joint_damping = left_embodiment_args.get("joint_damping", 200) * joint_damping_scale
         self.left_gripper_stiffness = left_embodiment_args.get("gripper_stiffness", 1000)
         self.left_gripper_damping = left_embodiment_args.get("gripper_damping", 200)
         self.left_planner_type = left_embodiment_args.get("planner", "mplib_RRT")
@@ -70,7 +71,7 @@ class Robot:
             self.right_srdf_path = os.path.join(right_robot_file, self.right_srdf_path)
         self.right_curobo_yml_path = os.path.join(right_robot_file, "curobo.yml")
         self.right_joint_stiffness = right_embodiment_args.get("joint_stiffness", 1000)
-        self.right_joint_damping = right_embodiment_args.get("joint_damping", 200)
+        self.right_joint_damping = right_embodiment_args.get("joint_damping", 200) * joint_damping_scale
         self.right_gripper_stiffness = right_embodiment_args.get("gripper_stiffness", 1000)
         self.right_gripper_damping = right_embodiment_args.get("gripper_damping", 200)
         self.right_planner_type = right_embodiment_args.get("planner", "mplib_RRT")

@@ -23,6 +23,7 @@ class put_object_cabinet(Base_Task):
             qpos=[1, 0, 0, 1],
             fix_root_link=True,
         )
+        self.apply_object_joint_damping(self.cabinet)
         rand_pos = rand_pose(
             xlim=[-0.25, 0.25],
             ylim=[-0.2, -0.1],

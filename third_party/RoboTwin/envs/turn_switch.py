@@ -22,6 +22,7 @@ class turn_switch(Base_Task):
             qpos=[0.704141, 0, 0, 0.71006],
             fix_root_link=True,
         )
+        self.apply_object_joint_damping(self.switch)
         self.prohibited_area.append([-0.4, -0.2, 0.4, 0.2])
 
     def play_once(self):
