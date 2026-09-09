@@ -26,9 +26,16 @@ def preprocess(scene, pose: sapien.Pose) -> tuple[sapien.Scene, sapien.Pose]:
 def _default_collision_material(scene):
     if not getattr(scene, "use_default_collision_material", False):
         return None
-    if isinstance(scene, sapien.Scene):
-        return scene.default_physical_material
-    return scene.scene.default_physical_material
+    actual_scene = scene if isinstance(scene, sapien.Scene) else scene.scene
+    # These collision builders originally used the engine default material, whose
+    # friction can differ from the task's explicit scene material. Copy its
+    # friction and override only restitution; never mutate the shared default.
+    original = sapienp.get_default_material()
+    return actual_scene.create_physical_material(
+        original.static_friction,
+        original.dynamic_friction,
+        actual_scene.default_physical_material.restitution,
+    )
 
 
 # create box

@@ -110,7 +110,8 @@ class Base_Task(gym.Env):
         self.plan_success = True
         self.step_lim = None
         self.fix_gripper = False
-        self.setup_scene()
+        # Forward only the scanned contact parameter; keep other scene defaults unchanged.
+        self.setup_scene(restitution=kwags.get("restitution", 0))
 
         self.left_js = None
         self.right_js = None
@@ -289,6 +290,9 @@ class Base_Task(gym.Env):
         Set the scene
             - Set up the basic scene: light source, viewer.
         """
+        restitution = float(kwargs.get("restitution", 0))
+        if not math.isfinite(restitution) or not 0 <= restitution <= 1:
+            raise ValueError("restitution must be finite and between 0 and 1.")
         self.engine = sapien.Engine()
         # declare sapien renderer
         from sapien.render import set_global_config
@@ -305,6 +309,7 @@ class Base_Task(gym.Env):
 
         # declare sapien scene
         scene_config = sapien.SceneConfig()
+        scene_config.bounce_threshold = 0.5  # m/s, relative normal impact speed
         self.scene = self.engine.create_scene(scene_config)
         # set simulation timestep
         self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
@@ -314,7 +319,7 @@ class Base_Task(gym.Env):
         self.scene.default_physical_material = self.scene.create_physical_material(
             kwargs.get("static_friction", 0.5),
             kwargs.get("dynamic_friction", 0.5),
-            kwargs.get("restitution", 0),
+            restitution,
         )
         # give some white ambient light of moderate intensity
         self.scene.set_ambient_light(kwargs.get("ambient_light", [0.5, 0.5, 0.5]))

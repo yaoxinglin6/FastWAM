@@ -26,6 +26,11 @@ from typing import Any
 
 import yaml
 
+try:
+    from .gripper_diagnostics import GripperDiagnostics
+except ImportError:
+    from gripper_diagnostics import GripperDiagnostics
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CKPT = PROJECT_ROOT / "checkpoints" / "fastwam_release" / "robotwin_uncond_3cam_384.pt"
@@ -357,8 +362,11 @@ def _run_rollout(
 ) -> dict[str, Any]:
     success = False
     error_text: str | None = None
+    diagnostics = GripperDiagnostics() if config.get("record_gripper_state", False) else None
     try:
         env.setup_demo(now_ep_num=repeat_index, seed=environment_seed, is_test=True, **args)
+        if diagnostics is not None:
+            diagnostics.start(env, config, args, environment_seed, repeat_index)
         env.set_instruction(instruction=instruction)
         runtime["reset_func"](runtime["model"])
         while env.take_action_cnt < env.step_lim:
@@ -368,22 +376,31 @@ def _run_rollout(
             elif runtime["model"].should_request_observation():
                 observation = env.get_obs()
             runtime["eval_func"](env, runtime["model"], observation)
+            if diagnostics is not None:
+                diagnostics.sample(env)
             if env.eval_success:
                 success = True
                 break
     except Exception as error:
         error_text = f"{type(error).__name__}: {error}"
     finally:
+        if diagnostics is not None:
+            diagnostics.close()
         runtime["rollout_count"] += 1
         clear_cache = runtime["rollout_count"] % int(args["clear_cache_freq"]) == 0
         _safe_close(env, clear_cache=clear_cache)
 
-    return {
+    result = {
         "repeat_index": repeat_index,
         "success": success,
         "steps": getattr(env, "take_action_cnt", None),
         "error": error_text,
     }
+    if diagnostics is not None:
+        result["gripper_diagnostics"] = diagnostics.metadata
+        result["diagnostics_error"] = diagnostics.error
+        result["effective_drive_properties"] = diagnostics.effective_drive_properties
+    return result
 
 
 def _evaluate_candidate(runtime: dict[str, Any], config: dict[str, Any], phase: str, environment_seed: int, gpu_id: str) -> dict[str, Any]:
@@ -409,6 +426,8 @@ def _evaluate_candidate(runtime: dict[str, Any], config: dict[str, Any], phase: 
         "error": None,
     }
     if not expert["ok"] or episode_info is None:
+        if config.get("record_gripper_state", False):
+            result["gripper_diagnostics"] = {"status": "not_run_expert_failed", "csv_path": None}
         result["error"] = expert["error"] or "expert planning did not reach task success"
         result["finished_at"] = _now()
         return result

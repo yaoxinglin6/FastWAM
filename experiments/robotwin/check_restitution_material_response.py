@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import os
 import sys
 from dataclasses import dataclass
@@ -27,6 +28,8 @@ def _parse_values(raw: str) -> list[float]:
 
 
 def _measure(kind: str, restitution: float, steps: int) -> dict[str, Any]:
+    if not math.isfinite(restitution) or not 0 <= restitution <= 1:
+        raise ValueError("restitution must be finite and between 0 and 1.")
     os.chdir(ROBOTWIN_ROOT)
     if str(ROBOTWIN_ROOT) not in sys.path:
         sys.path.insert(0, str(ROBOTWIN_ROOT))
@@ -35,7 +38,9 @@ def _measure(kind: str, restitution: float, steps: int) -> dict[str, Any]:
     from envs.utils import create_actor, create_box
 
     engine = sapien.Engine()
-    scene = engine.create_scene(sapien.SceneConfig())
+    scene_config = sapien.SceneConfig()
+    scene_config.bounce_threshold = 0.5  # m/s, relative normal impact speed
+    scene = engine.create_scene(scene_config)
     scene.set_timestep(1 / 250)
     scene.default_physical_material = scene.create_physical_material(0.5, 0.5, restitution)
     scene.add_ground(0)
@@ -83,7 +88,7 @@ def _measure(kind: str, restitution: float, steps: int) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--values", default="0,0.2,0.5,0.8,1.0,1.2,1.5,2.0")
+    parser.add_argument("--values", default="0,0.2,0.5,0.8,1.0")
     parser.add_argument("--kinds", default="box,bowl,can")
     parser.add_argument("--steps", type=int, default=750)
     parser.add_argument("--output-dir", default=None)

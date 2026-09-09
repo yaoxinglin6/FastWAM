@@ -16,6 +16,12 @@ evaluate_results/
 
 volc/
 tests/
+# Keep the focused gripper sweep regression checks in the repository.
+!/tests/
+/tests/*
+!/tests/test_gripper_damping.py
+!/tests/test_gripper_diagnostics.py
+!/tests/test_restitution.py
 
 # ai coding
 .codex/

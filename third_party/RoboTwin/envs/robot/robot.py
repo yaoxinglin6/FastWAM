@@ -35,6 +35,9 @@ class Robot:
         left_robot_file = kwargs["left_robot_file"]
         right_robot_file = kwargs["right_robot_file"]
         joint_damping_scale = float(kwargs.get("robot_joint_damping_scale", 1.0))
+        self.gripper_damping_scale = float(kwargs.get("gripper_damping_scale", 1.0))
+        if not math.isfinite(self.gripper_damping_scale) or self.gripper_damping_scale < 0:
+            raise ValueError("gripper_damping_scale must be finite and non-negative")
 
         self.need_topp = need_topp
 
@@ -46,7 +49,7 @@ class Robot:
         self.left_joint_stiffness = left_embodiment_args.get("joint_stiffness", 1000)
         self.left_joint_damping = left_embodiment_args.get("joint_damping", 200) * joint_damping_scale
         self.left_gripper_stiffness = left_embodiment_args.get("gripper_stiffness", 1000)
-        self.left_gripper_damping = left_embodiment_args.get("gripper_damping", 200)
+        self.left_gripper_damping = left_embodiment_args.get("gripper_damping", 200) * self.gripper_damping_scale
         self.left_planner_type = left_embodiment_args.get("planner", "mplib_RRT")
         self.left_move_group = left_embodiment_args["move_group"][0]
         self.left_ee_name = left_embodiment_args["ee_joints"][0]
@@ -73,7 +76,7 @@ class Robot:
         self.right_joint_stiffness = right_embodiment_args.get("joint_stiffness", 1000)
         self.right_joint_damping = right_embodiment_args.get("joint_damping", 200) * joint_damping_scale
         self.right_gripper_stiffness = right_embodiment_args.get("gripper_stiffness", 1000)
-        self.right_gripper_damping = right_embodiment_args.get("gripper_damping", 200)
+        self.right_gripper_damping = right_embodiment_args.get("gripper_damping", 200) * self.gripper_damping_scale
         self.right_planner_type = right_embodiment_args.get("planner", "mplib_RRT")
         self.right_move_group = right_embodiment_args["move_group"][1]
         self.right_ee_name = right_embodiment_args["ee_joints"][1]

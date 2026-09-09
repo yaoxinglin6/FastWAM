@@ -1,0 +1,52 @@
+task_name: stack_bowls_two
+checkpoint: checkpoints/fastwam_release/robotwin_uncond_3cam_384.pt
+policy_seed: 42
+phases:
+  clean:
+    task_config: demo_clean
+    instruction_type: seen
+    successful_seeds:
+    - environment_seed: 4300002
+      consecutive_successes: 5
+    - environment_seed: 4300003
+      consecutive_successes: 5
+    - environment_seed: 4300006
+      consecutive_successes: 5
+    - environment_seed: 4300007
+      consecutive_successes: 5
+    - environment_seed: 4300008
+      consecutive_successes: 5
+    - environment_seed: 4300009
+      consecutive_successes: 5
+    - environment_seed: 4300010
+      consecutive_successes: 5
+    - environment_seed: 4300011
+      consecutive_successes: 5
+    - environment_seed: 4300012
+      consecutive_successes: 5
+    - environment_seed: 4300013
+      consecutive_successes: 5
+  random:
+    task_config: demo_randomized
+    instruction_type: unseen
+    successful_seeds:
+    - environment_seed: 4300002
+      consecutive_successes: 5
+    - environment_seed: 4300004
+      consecutive_successes: 5
+    - environment_seed: 4300005
+      consecutive_successes: 5
+    - environment_seed: 4300007
+      consecutive_successes: 5
+    - environment_seed: 4300009
+      consecutive_successes: 5
+    - environment_seed: 4300010
+      consecutive_successes: 5
+    - environment_seed: 4300011
+      consecutive_successes: 5
+    - environment_seed: 4300014
+      consecutive_successes: 5
+    - environment_seed: 4300019
+      consecutive_successes: 5
+    - environment_seed: 4300020
+      consecutive_successes: 5

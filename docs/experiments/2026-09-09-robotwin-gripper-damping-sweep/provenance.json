@@ -1,0 +1,32 @@
+{
+  "source_repository": "https://github.com/yaoxinglin6/FastWAM.git",
+  "source_commit": "d00fff7d4c3c0000b6f719e4fc60496095ab3067",
+  "restored_on": "2026-09-09",
+  "status": "historical_seed_archive_not_revalidated_in_this_experiment",
+  "files": [
+    {
+      "task_name": "handover_block",
+      "source_path": "docs/experiments/2026-08-27-robotwin-all-tasks-seed-search/successful-seeds/handover_block.yaml",
+      "source_blob": "61c8a2af2aa4aca06585cc4dd1cd22fc4b2af2af",
+      "archive_path": "successful-seeds/handover_block.yaml",
+      "size_bytes": 1558,
+      "sha256": "eec9231a620ad167f70a055c32a1f55b6f20712f684e7fd72b92c4a51b4b600c"
+    },
+    {
+      "task_name": "stack_bowls_two",
+      "source_path": "docs/experiments/2026-08-27-robotwin-all-tasks-seed-search/successful-seeds/stack_bowls_two.yaml",
+      "source_blob": "f12234fb1a1092574dfa51487a72a9f5650f1a68",
+      "archive_path": "successful-seeds/stack_bowls_two.yaml",
+      "size_bytes": 1559,
+      "sha256": "333aa5ceaaa162a7ff7f7ca07f89716b5f550e3dd8d14a8e910e0e92ad00fc3c"
+    },
+    {
+      "task_name": "place_can_basket",
+      "source_path": "docs/experiments/2026-08-27-robotwin-all-tasks-seed-search/successful-seeds/place_can_basket.yaml",
+      "source_blob": "fe09df00053d8df75cb39df20c0d792fe5d8640d",
+      "archive_path": "successful-seeds/place_can_basket.yaml",
+      "size_bytes": 1560,
+      "sha256": "a0908843182622d6a0fde7520da4c76d294fe61bce109961273859541ba634f1"
+    }
+  ]
+}

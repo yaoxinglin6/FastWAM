@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import multiprocessing as mp
 import os
 import queue
@@ -40,6 +41,7 @@ SUPPORTED_PHYSICS_PARAMETERS = {
     "object_joint_damping",
     "restitution",
     "robot_joint_damping_scale",
+    "gripper_damping_scale",
 }
 
 
@@ -162,7 +164,13 @@ def _setup_overrides(
         }
     if physics_parameter == "robot_joint_damping_scale":
         return {"robot_joint_damping_scale": physics_value}
+    if physics_parameter == "gripper_damping_scale":
+        if not math.isfinite(physics_value) or physics_value < 0:
+            raise ValueError("gripper_damping_scale must be finite and non-negative.")
+        return {"gripper_damping_scale": physics_value}
     if physics_parameter == "restitution":
+        if not math.isfinite(physics_value) or not 0 <= physics_value <= 1:
+            raise ValueError("restitution must be finite and between 0 and 1.")
         return {"restitution": physics_value}
     if physics_parameter in {"center_of_mass_x", "center_of_mass_y", "center_of_mass_z"}:
         axis = physics_parameter.rsplit("_", 1)[-1]
@@ -331,6 +339,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--job-name", default=None)
     parser.add_argument("--manifest", default=None)
     parser.add_argument("--manifest-root", default=str(DEFAULT_MANIFEST_ROOT))
+    parser.add_argument("--phases", default=None, help="Comma-separated manifest phases, e.g. clean or clean,random; default: all.")
+    parser.add_argument("--record-gripper-state", action="store_true", help="Record actual gripper states at policy-call boundaries without changing policy observations.")
     parser.add_argument("--task-name", default=None)
     parser.add_argument("--physics-parameter", choices=sorted(SUPPORTED_PHYSICS_PARAMETERS), default=None)
     parser.add_argument("--physics-value", type=float, default=None)
@@ -395,6 +405,14 @@ def _make_config(args: argparse.Namespace) -> dict[str, Any]:
     manifest = validate._load_manifest(manifest_path)
     if manifest["task_name"] != task_name:
         raise ValueError(f"Manifest task_name {manifest['task_name']!r} does not match {task_name!r}.")
+    if args.phases is not None:
+        phases = [phase.strip() for phase in args.phases.split(",")]
+        if not all(phases) or len(phases) != len(set(phases)):
+            raise ValueError("--phases must contain non-empty, distinct phase names.")
+        missing = set(phases) - set(manifest["phases"])
+        if missing:
+            raise ValueError(f"Requested phases not present in manifest: {sorted(missing)}")
+        manifest = {**manifest, "phases": {phase: manifest["phases"][phase] for phase in phases}}
     seed_panel = _load_seed_panel(args.seed_panel_file)
     manifest = _selected_manifest(manifest, args.seed_limit_per_phase, seed_panel, args.unique_seeds_across_phases)
 
@@ -439,6 +457,7 @@ def _make_config(args: argparse.Namespace) -> dict[str, Any]:
         "negative_prompt": args.negative_prompt,
         "rand_device": args.rand_device,
         "skip_get_obs_within_replan": args.skip_get_obs_within_replan,
+        "record_gripper_state": args.record_gripper_state,
         "manifest_path": str(manifest_path),
         "manifest": manifest,
         "seed_limit_per_phase": args.seed_limit_per_phase,
